@@ -15,7 +15,7 @@
 # DISCLAIMER: This file is strongly influenced by https://github.com/ermongroup/ddim
 
 import math
-from typing import Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -24,7 +24,7 @@ from ..configuration_utils import ConfigMixin, register_to_config
 from .scheduling_utils import SchedulerMixin, SchedulerOutput
 
 
-def betas_for_alpha_bar(num_diffusion_timesteps, max_beta=0.999):
+def betas_for_alpha_bar(num_diffusion_timesteps: int, max_beta: float = 0.999) -> np.ndarray:
     """
     Create a beta schedule that discretizes the given alpha_t_bar function, which defines the cumulative product of
     (1-beta) over time from t = [0,1].
@@ -42,14 +42,14 @@ def betas_for_alpha_bar(num_diffusion_timesteps, max_beta=0.999):
         betas (`np.ndarray`): the betas used by the scheduler to step the model outputs
     """
 
-    def alpha_bar(time_step):
+    def calculate_alpha_bar(time_step: float) -> float:
         return math.cos((time_step + 0.008) / 1.008 * math.pi / 2) ** 2
 
-    betas = []
-    for i in range(num_diffusion_timesteps):
-        t1 = i / num_diffusion_timesteps
-        t2 = (i + 1) / num_diffusion_timesteps
-        betas.append(min(1 - alpha_bar(t2) / alpha_bar(t1), max_beta))
+    betas: List[float] = []
+    for diffusion_timestep in range(num_diffusion_timesteps):
+        lower_timestep = diffusion_timestep / num_diffusion_timesteps
+        upper_timestep = (diffusion_timestep + 1) / num_diffusion_timesteps
+        betas.append(min(1 - calculate_alpha_bar(upper_timestep) / calculate_alpha_bar(lower_timestep), max_beta))
     return np.array(betas, dtype=np.float32)
 
 
